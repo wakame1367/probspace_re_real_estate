@@ -73,13 +73,11 @@ def main():
     train, test = load_dataset()
 
     target_col = "y"
-    is_train = "is_train"
 
     target = train[target_col]
     target = target.map(np.log1p)
-    train[is_train] = 1
-    test[is_train] = 0
-    train.drop(columns=[target_col], inplace=True)
+    test[target_col] = -1
+    # train.drop(columns=[target_col], inplace=True)
     _all = pd.concat([train, test], ignore_index=True)
     _all = _all.rename(columns=rename_dict)
     _all = preprocess(_all)
@@ -93,11 +91,13 @@ def main():
 
     _all = category_encode(_all, cat_cols + one_hot_cols)
 
-    train = _all[_all[is_train] == 1]
-    test = _all[_all[is_train] == 0]
+    train = _all[_all[target_col] >= 0]
+    test = _all[_all[target_col] < 0]
+    # target = _all[_all[target_col] >= 0].loc[:, target_col]
 
-    train.drop(columns=[is_train], inplace=True)
-    test.drop(columns=[is_train], inplace=True)
+    train.drop(columns=[target_col], inplace=True)
+    test.drop(columns=[target_col], inplace=True)
+    del _all
 
     lightgbm_params = {
         "metric": "rmse",
