@@ -136,6 +136,8 @@ def main():
     # lgb_result.test_prediction
     lgb_result.submission_df[target_col] = lgb_result.submission_df[
         target_col].map(np.expm1)
+    # index 0 to 1
+    lgb_result.submission_df["id"] += 1
     sub_path = Path(logging_directory) / "{}.csv".format(now)
     lgb_result.submission_df.to_csv(sub_path, index=False)
 
