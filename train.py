@@ -20,7 +20,18 @@ def rmse(y_true, y_pred):
 def load_dataset():
     train = pd.read_csv(data_path / "train_data.csv")
     test = pd.read_csv(data_path / "test_data.csv")
-    return train, test
+    rename_pairs = {
+        "所在地コード": "市区町村コード", "建蔽率": "建ぺい率（％）",
+        "容積率": "容積率（％）", "駅名": "最寄駅：名称",
+        "地積": "面積（㎡）", "市区町村名": "市区町村名",
+        '前面道路の幅員': '前面道路：幅員（ｍ）', "前面道路の方位区分": "前面道路：方位",
+        "前面道路区分": "前面道路：種類", "形状区分": "土地の形状",
+        "用途区分": "都市計画", '用途': '地域'
+    }
+    land_price = pd.read_csv(data_path / "published_land_price.csv",
+                             dtype={'利用の現況': str})
+    land_price = land_price.rename(columns=rename_pairs)
+    return train, test, land_price
 
 
 def preprocess_land_price(train, test):
@@ -70,7 +81,7 @@ def main():
     with open("settings/colum_names.yml", "r", encoding="utf-8") as f:
         rename_dict = yaml.load(f, Loader=yaml.Loader)
 
-    train, test = load_dataset()
+    train, test, land_price = load_dataset()
 
     target_col = "y"
 
@@ -80,6 +91,7 @@ def main():
     # train.drop(columns=[target_col], inplace=True)
     _all = pd.concat([train, test], ignore_index=True)
     _all = _all.rename(columns=rename_dict)
+    land_price = land_price.rename(columns=rename_dict)
     _all = preprocess(_all)
     drop_cols = ["id", "Prefecture", "Municipality", "年号", "和暦年数", 'FloorPlan']
     one_hot_cols = ['Structure', 'Use', 'Remarks']
