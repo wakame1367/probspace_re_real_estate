@@ -18,7 +18,7 @@ def period(df):
                     '四半期': '',
                     '１': '0',
                     '２': '25',
-                    '３': '5',
+                    '３': '50',
                     '４': '75'}
     df["Period"] = pd.to_numeric(df["Period"].replace(replace_dict),
                                  errors='raise')
