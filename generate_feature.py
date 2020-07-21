@@ -111,6 +111,11 @@ def area_div_frontage(df):
     return df
 
 
+def frontage_div_breadth(df):
+    df['frontage_div_breadth'] = df['Frontage'] / df['Breadth']
+    return df
+
+
 def maguchi(df):
     df['Frontage'] = pd.to_numeric(df['Frontage'].replace('50.0m以上', 50.0))
     return df
