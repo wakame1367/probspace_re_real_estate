@@ -3,6 +3,7 @@ from sklearn.preprocessing import LabelEncoder
 
 from generate_feature import (built_year, walk_time, area1, area2, maguchi,
                               remarks, landshape, structure, use, num_of_rooms,
+                              nearest_station, period, region,
                               ldk, total_floor_area_div_area,
                               total_floor_area_per_floor,
                               area_div_frontage, frontage_div_breadth)
@@ -25,6 +26,9 @@ def preprocess(df):
     df = maguchi(df)
     df = ldk(df)
     df = num_of_rooms(df)
+    df = nearest_station(df)
+    df = period(df)
+    df = region(df)
     df = total_floor_area_div_area(df)
     df = total_floor_area_per_floor(df)
     df = area_div_frontage(df)
