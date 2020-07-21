@@ -96,11 +96,6 @@ def region(df):
     return df
 
 
-def area_div_total_floor_area(df):
-    df['area_div_total_floor_area'] = df['Area'] / df['TotalFloorArea']
-    return df
-
-
 def total_floor_area_div_area(df):
     df['total_floor_area_div_area'] = df['TotalFloorArea'] / df['Area']
     return df
