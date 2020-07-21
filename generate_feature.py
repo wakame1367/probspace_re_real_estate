@@ -18,8 +18,8 @@ def period(df):
                     '四半期': '',
                     '１': '0',
                     '２': '25',
-                    '３':'5',
-                    '４':'75'}
+                    '３': '5',
+                    '４': '75'}
     df["Period"] = pd.to_numeric(df["Period"].replace(replace_dict),
                                  errors='raise')
     return df
@@ -108,6 +108,11 @@ def total_floor_area_div_area(df):
 
 def total_floor_area_per_floor(df):
     df['total_floor_area'] = df['Area'] / df['num_of_rooms']
+    return df
+
+
+def area_div_frontage(df):
+    df['area_div_frontage'] = df['Area'] / df['Frontage']
     return df
 
 
