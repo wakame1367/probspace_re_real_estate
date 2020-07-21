@@ -82,6 +82,8 @@ def area1(df):
 def area2(df):
     replace_dict = {'2000㎡以上': 2000, '5000㎡以上': 5000}
     df['Area'] = pd.to_numeric(df['Area'].replace(replace_dict))
+
+    df.loc[(df['Type'] == '林地') | (df['Type'] == '農地'), 'Area'] *= 0.1
     return df
 
 
