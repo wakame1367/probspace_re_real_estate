@@ -73,6 +73,15 @@ def area2(df):
     return df
 
 
+def region(df):
+    replace_dict = {'住宅地': '0',
+                    '宅地見込地': '003',
+                    '商業地': '005',
+                    '工業地': '009'}
+    df['Region'] = pd.to_numeric(df['Region'].replace(replace_dict))
+    return df
+
+
 def area_div_total_floor_area(df):
     df['area_div_total_floor_area'] = df['Area'] / df['TotalFloorArea']
     return df
