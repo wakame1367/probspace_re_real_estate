@@ -34,14 +34,44 @@ def load_dataset():
     return train, test, land_price
 
 
-def preprocess_land_price(train, test):
-    land_price = pd.read_csv("resources/published_land_price.csv")
+def preprocess_land_price(land_price):
+    land_price["面積（㎡）"] = land_price["面積（㎡）"].clip(0, 3000)
+    # preprocess 利用の現況
+
     # land_price = land_price.rename({"緯度": "latitude", "経度": "longitude"})
     land_price = clean_land_price(land_price)
-    train = clean_train_test(train)
-    test = clean_train_test(test)
-    train, test = add_landp(train, test, land_price)
-    return train, test
+    return
+
+
+def current_status_of_use(land_price):
+    riyo_list = np.array(
+        ['住宅', '店舗', '事務所', '_', '_',
+         '_', '工場', '倉庫', '_', '_', '_', '_',
+         '作業場', '_', 'その他', '_', '_']
+    )
+    riyo_now = [[0] * (17 - len(num)) + list(map(int, list(num)))
+                for num in land_price['利用の現況'].values]
+    riyo_now = np.array(riyo_now)
+    riyo_lists = ['、'.join(riyo_list[onehot.astype('bool')]) for onehot in
+                  riyo_now]
+    for i in range(len(riyo_lists)):
+        if 'その他' in riyo_lists[i]:
+            riyo_lists[i] = riyo_lists[i].replace('その他', land_price.loc[
+                i, '利用状況表示'])
+        riyo_lists[i] = riyo_lists[i].replace('_', 'その他').replace('、雑木林',
+                                                                  '').replace(
+            '、診療所', '').replace('、車庫', '').replace('、集会場', '') \
+            .replace('、寄宿舎', '').replace('、駅舎', '').replace('、劇場', '').replace(
+            '、物置', '').replace('、集会場', '').replace('、映画館', '') \
+            .replace('、遊技場', '').replace('兼', '、').replace('、建築中',
+                                                           'その他').replace(
+            '、試写室', '').replace('、寮', '').replace('、保育所', '') \
+            .replace('、治療院', '').replace('、診療所', '').replace('、荷捌所',
+                                                             '').replace('建築中',
+                                                                         'その他').replace(
+            '事業所', '事務所').replace('、営業所', '')
+    land_price['利用の現況'] = riyo_lists
+    return land_price
 
 
 def clean_land_price(df):
