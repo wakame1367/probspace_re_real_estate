@@ -13,6 +13,18 @@ def built_year(df):
     return df
 
 
+def period(df):
+    replace_dict = {'年第': '.',
+                    '四半期': '',
+                    '１': '0',
+                    '２': '25',
+                    '３':'5',
+                    '４':'75'}
+    df["Period"] = pd.to_numeric(df["Period"].replace(replace_dict),
+                                 errors='raise')
+    return df
+
+
 def get_num_of_rooms(floor_plan):
     try:
         _num_of_rooms = int(floor_plan[0])
