@@ -144,3 +144,14 @@ def use(df):
     4         0    1   1    0   0     0   0   1    0
     """
     return series_split_colum(df, col_name)
+
+
+def nearest_station(df):
+    df['最寄駅：名称'] = df['最寄駅：名称'].fillna('なし')
+    df['最寄駅：名称'] = df['最寄駅：名称'].str.replace('(東京)', '').str.replace(
+        '(神奈川)', '').str.replace('ケ', 'ヶ')
+    df['最寄駅：名称'] = df['最寄駅：名称'].str.replace('(メトロ)', '').str.replace(
+        '(都電)', '').str.replace('(つくばＥＸＰ)', '')
+    df['最寄駅：名称'] = df['最寄駅：名称'].str.replace('(千葉)', '').str.replace(
+        '(東京メトロ)', '').str.strip('()')
+    return df
