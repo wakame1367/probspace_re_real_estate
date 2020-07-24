@@ -103,13 +103,10 @@ def main():
         rename_dict = yaml.load(f, Loader=yaml.Loader)
 
     train, test, land_price = load_dataset()
-
     target_col = "y"
-
     target = train[target_col]
     target = target.map(np.log1p)
     test[target_col] = -1
-    # train.drop(columns=[target_col], inplace=True)
     _all = pd.concat([train, test], ignore_index=True)
 
     land_price = preprocess_land_price(land_price)
@@ -157,7 +154,6 @@ def main():
 
     train = _all[_all[target_col] >= 0]
     test = _all[_all[target_col] < 0]
-    # target = _all[_all[target_col] >= 0].loc[:, target_col]
 
     train.drop(columns=[target_col], inplace=True)
     test.drop(columns=[target_col], inplace=True)
