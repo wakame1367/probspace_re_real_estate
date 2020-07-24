@@ -53,6 +53,7 @@ def preprocess_land_price(land_price):
     land_price["市区町村名"] = land_price["市区町村名"].replace(r"^東京", "",
                                                       regex=True)
     # train/testと統一
+    land_price['最寄駅：名称'] = land_price['最寄駅：名称'].str.replace('ケ', 'ヶ')
     land_price["市区町村名"] = land_price["市区町村名"].str.replace('ケ', 'ヶ')
     land_price["面積（㎡）"] = land_price["面積（㎡）"].clip(0, 3000)
     # preprocess 利用の現況
