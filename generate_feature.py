@@ -183,3 +183,12 @@ def nearest_station(df):
     df['NearestStation'] = df['NearestStation'].str.replace('(千葉)', '').str.replace(
         '(東京メトロ)', '').str.strip('()')
     return df
+
+
+def extract_merge_key(df, col_name="AreaKey"):
+    # 千代田区 + 飯田橋 = 千代田区飯田橋
+    df[col_name] = df['Municipality'] + df['DistrictName']
+    # published_land_price groupbyを使った特徴量を生成する際のkeyに利用
+    # 5で切り出しているのはpublished_land_priceと一致させるため
+    df[col_name] = df[col_name].str[:5]
+    return df

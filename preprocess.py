@@ -1,4 +1,4 @@
-import pandas as pd
+import numpy as np
 from sklearn.preprocessing import LabelEncoder
 
 from generate_feature import (built_year, walk_time, area1, area2, maguchi,
@@ -90,6 +90,6 @@ def preprocess_land_price(land_price):
     # 番地総当たり
     for num in ['１', '２', '３', '４', '５', '６', '７', '８', '９']:
         se = se.str.split(num).str[0].str.strip()
-    land_price['地区詳細'] = se
-    land_price['地区詳細'] = land_price['地区詳細'].str[:5]
+    land_price['AreaKey'] = se
+    land_price['AreaKey'] = land_price['AreaKey'].str[:5]
     return land_price
