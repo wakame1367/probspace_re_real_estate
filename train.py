@@ -110,14 +110,6 @@ def main():
     _all = pd.concat([train, test], ignore_index=True)
 
     land_price = preprocess_land_price(land_price)
-    # for merge_key, rename_col in zip(merge_keys, merge_columns):
-    #     _all['m2x' + merge_key] = _all[rename_col] * _all['面積（㎡）'] / 100
-    #     # _all['nm2x'+col] = _all[col+'y'] * _all['延床面積（㎡）']/100
-    #     _all['m2m2x' + merge_key] = _all[rename_col] * (
-    #             _all['面積（㎡）'] + _all['延床面積（㎡）'].fillna(0)) / 100
-    #     _all['m2m2x' + merge_key + '_sta'] = _all['m2m2x' + merge_key] * (1 - _all[
-    #                                                     '最寄駅：距離（分）'].clip(0,
-    #                                                                       10) * 0.02)
     _all = _all.rename(columns=rename_dict)
     _all["AreaKey"] = _all['Municipality'] + _all['DistrictName']
     _all["AreaKey"] = _all["AreaKey"].str[:5]
@@ -143,6 +135,15 @@ def main():
         _all.loc[_all[c].isna(), c] = _all.loc[_all[c].isna(), a]
 
     _all = preprocess(_all)
+
+    for merge_key in merge_keys:
+        mean_col = f'{merge_key}_{land_price_col}_mean'
+        _all['m2x' + merge_key] = _all[mean_col] * _all['Area'] / 100
+        # _all['nm2x'+col] = _all[col+'y'] * _all['延床面積（㎡）']/100
+        _all['m2m2x' + merge_key] = _all[mean_col] * (
+                _all['Area'] + _all['TotalFloorArea'].fillna(0)) / 100
+        _all['m2m2x' + merge_key + '_sta'] = _all['m2m2x' + merge_key] * (1 - _all['TimeToNearestStation'].clip(0, 10) * 0.02)
+
     drop_cols = ["id", "Prefecture", "Municipality", "年号", "和暦年数", 'FloorPlan']
     one_hot_cols = ['Structure', 'Use', 'Remarks']
     cat_cols = ['Type', 'Region', 'MunicipalityCode', 'DistrictName',
