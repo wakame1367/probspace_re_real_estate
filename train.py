@@ -35,12 +35,58 @@ def load_dataset():
 
 
 def preprocess_land_price(land_price):
+    land_price['最寄駅：距離（分）'] = land_price['駅距離'] // 50
+    land_price.loc[:, '最寄駅：距離（分）'][land_price['最寄駅：距離（分）'] > 120] = 120
+    land_price['間口（比率）'] = land_price['間口（比率）'].clip(10, 100)
+    land_price['奥行（比率）'] = land_price['奥行（比率）'].clip(10, 100)
+    land_price['間口'] = np.sqrt(
+        land_price['面積（㎡）'] / land_price['間口（比率）'] / land_price[
+            '奥行（比率）']) * land_price['間口（比率）']
+
+    # 東京府中 -> 府中
+    land_price["市区町村名"] = land_price["市区町村名"].replace(r"^東京", "",
+                                                      regex=True)
+    # train/testと統一
+    land_price["市区町村名"] = land_price["市区町村名"].str.replace('ケ', 'ヶ')
     land_price["面積（㎡）"] = land_price["面積（㎡）"].clip(0, 3000)
     # preprocess 利用の現況
+    # 最新の公示価格を対象
+    target_col = "Ｈ３１価格"
+    target = land_price[target_col]
+    target = target.rename("land_price")
+    # train/test 取引金額(1,000,000円)表記に合わせる
+    target = target / 100000
+    # drop_pat_1 = '(Ｓ|Ｈ).+価格'
+    # drop_pat_2 = '属性移動(Ｓ|Ｈ).+'
+    # 容積率（％）までのカラムを用いる
+    land_price = land_price.iloc[:, :41]
+    land_price["取引時点"] = 2019
+    land_price = land_price.join(target)
 
     # land_price = land_price.rename({"緯度": "latitude", "経度": "longitude"})
-    land_price = clean_land_price(land_price)
-    return
+    rep = {'1低専': '第１種低層住居専用地域',
+           '2低専': '第２種低層住居専用地域',
+           '1中専': '第１種中高層住居専用地域',
+           '2中専': '第２種中高層住居専用地域',
+           '1住居': '第１種住居地域',
+           '2住居': '第２種住居地域',
+           '準住居': '準住居地域', '商業': '商業地域', '近商': '近隣商業地域',
+           '工業': '工業地域', '工専': '工業専用地域', '準工': '準工業地域', '田園住': '田園住居地域'}
+    for key, value in rep.items():
+        land_price.loc[:, '都市計画'] = land_price.loc[:, '都市計画'].str.replace(key,
+                                                                          value)
+    land_price = land_price.rename(columns={'利用の現況': '用途'})
+
+    # 住所番地手前で切り出し
+    se = land_price['住居表示'].str.strip('東京都').str.replace('大字',
+                                                         '').str.replace(
+        '字', '')
+    # 番地総当たり
+    for num in ['１', '２', '３', '４', '５', '６', '７', '８', '９']:
+        se = se.str.split(num).str[0].str.strip()
+    land_price['地区詳細'] = se
+    land_price['地区詳細'] = land_price['地区詳細'].str[:5]
+    return land_price
 
 
 def current_status_of_use(land_price):
@@ -120,6 +166,37 @@ def main():
     test[target_col] = -1
     # train.drop(columns=[target_col], inplace=True)
     _all = pd.concat([train, test], ignore_index=True)
+    _all["地区詳細"] = _all['市区町村名'] + _all['地区名']
+    _all["地区詳細"] = _all["地区詳細"].str[:5]
+    land_price = preprocess_land_price(land_price)
+    # cols = ['地域', '市区町村コード', '地区詳細', '建ぺい率（％）', '容積率（％）', '都市計画', '前面道路：方位',
+    #         '前面道路：種類', '最寄駅：名称']
+    merge_keys = ['市区町村コード', '地区詳細', '最寄駅：名称']
+    land_price_col = "land_price"
+    merge_columns = [merge_key + "_" + land_price_col for merge_key in merge_keys]
+    for merge_key, rename_col in zip(merge_keys, merge_columns):
+        # print(col, _all.shape)
+        group_mean = land_price[[merge_key, land_price_col]].groupby(
+            merge_key).mean()
+        group_mean = group_mean.rename(columns={land_price_col: rename_col})
+        _all = pd.merge(_all, group_mean, on=merge_key, how='left')
+
+    a = '地区詳細' + "_" + land_price_col
+    b = '市区町村コード' + "_" + land_price_col
+    c = '最寄駅：名称' + "_" + land_price_col
+
+    # nanになる値を他カラムの値を用いて埋める
+    _all.loc[_all[a].isna(), a] = _all.loc[_all[a].isna(), b]
+    _all.loc[_all[c].isna(), c] = _all.loc[_all[c].isna(), a]
+
+    # for merge_key, rename_col in zip(merge_keys, merge_columns):
+    #     _all['m2x' + merge_key] = _all[rename_col] * _all['面積（㎡）'] / 100
+    #     # _all['nm2x'+col] = _all[col+'y'] * _all['延床面積（㎡）']/100
+    #     _all['m2m2x' + merge_key] = _all[rename_col] * (
+    #             _all['面積（㎡）'] + _all['延床面積（㎡）'].fillna(0)) / 100
+    #     _all['m2m2x' + merge_key + '_sta'] = _all['m2m2x' + merge_key] * (1 - _all[
+    #                                                     '最寄駅：距離（分）'].clip(0,
+    #                                                                       10) * 0.02)
     _all = _all.rename(columns=rename_dict)
     land_price = land_price.rename(columns=rename_dict)
     _all = preprocess(_all)
@@ -128,10 +205,16 @@ def main():
     cat_cols = ['Type', 'Region', 'MunicipalityCode', 'DistrictName',
                 'NearestStation', 'LandShape', 'Purpose',
                 'Direction', 'Classification', 'CityPlanning', 'Renovation',
-                'Period']
+                'Period', '地区詳細']
     _all.drop(columns=drop_cols, inplace=True)
 
     _all = category_encode(_all, cat_cols + one_hot_cols)
+
+    _all = _all.rename(columns={
+        '地区詳細': "a",
+        '市区町村コード_land_price': "b",
+        '地区詳細_land_price': "c",
+        '最寄駅：名称_land_price': "d"})
 
     train = _all[_all[target_col] >= 0]
     test = _all[_all[target_col] < 0]
