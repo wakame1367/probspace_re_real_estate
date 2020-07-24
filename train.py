@@ -125,21 +125,22 @@ def main():
     land_price = land_price.rename(columns=rename_dict)
     merge_keys = ['MunicipalityCode', 'AreaKey', 'NearestStation']
     land_price_col = "land_price"
-    merge_columns = [merge_key + "_" + land_price_col for merge_key in
-                     merge_keys]
-    for merge_key, rename_col in zip(merge_keys, merge_columns):
-        group_mean = land_price[[merge_key, land_price_col]].groupby(
-            merge_key).mean()
-        group_mean = group_mean.rename(columns={land_price_col: rename_col})
-        _all = pd.merge(_all, group_mean, on=merge_key, how='left')
-
-    a = 'AreaKey' + "_" + land_price_col
-    b = 'MunicipalityCode' + "_" + land_price_col
-    c = 'NearestStation' + "_" + land_price_col
+    # count / std / var はfeatureimpが低いため除外
+    agg_funcs = ["sum", "min", "max", "mean"]
+    for merge_key in merge_keys:
+        group_aggs = land_price.groupby(merge_key)[land_price_col].agg(
+            agg_funcs)
+        group_aggs.columns = [f'{merge_key}_{land_price_col}_{agg_func}'
+                              for agg_func in group_aggs.columns]
+        _all = pd.merge(_all, group_aggs, on=merge_key, how='left')
 
     # nanになる値を他カラムの値を用いて埋める
-    _all.loc[_all[a].isna(), a] = _all.loc[_all[a].isna(), b]
-    _all.loc[_all[c].isna(), c] = _all.loc[_all[c].isna(), a]
+    for agg_func in agg_funcs:
+        a = f'AreaKey_{land_price_col}_{agg_func}'
+        b = f'MunicipalityCode_{land_price_col}_{agg_func}'
+        c = f'NearestStation_{land_price_col}_{agg_func}'
+        _all.loc[_all[a].isna(), a] = _all.loc[_all[a].isna(), b]
+        _all.loc[_all[c].isna(), c] = _all.loc[_all[c].isna(), a]
 
     _all = preprocess(_all)
     drop_cols = ["id", "Prefecture", "Municipality", "年号", "和暦年数", 'FloorPlan']
